@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<p>If you don't already have a login, get one <a href="/register">here</a>.</p>
+
+<form action="/login" method="post">
+
+  <div class='input'>
+  <label>
+      Email:
+      <input type="text" name="email" placeholder="Enter your email address" value = '{{email}}' />
+  </label>
+  </div>
+
+  <div class='input'>
+  <label>
+      Password:
+      <input type="password" name="password" placeholder="Please enter your password">
+  </label>
+  </div>
+
+  <input type="submit" value="Log in!"/>
+</form>
+
+
+{% endblock %}

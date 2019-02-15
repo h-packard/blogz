@@ -1,0 +1,9 @@
+.textarea {
+  width: 500px;
+  height: 200px;
+  word-break: break-all;
+}
+
+.error {
+  color: red;
+}
