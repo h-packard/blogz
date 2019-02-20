@@ -1,11 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<h3>Start a new post <a href="newpost">here</a>.</h3>
-
-
-{{owner.email}}
-
   {% if blogs|length == 0 %}
   <p>No entries yet!</p>
   {% else %}
@@ -15,12 +10,18 @@
       {% for blog in blogs %}
         <h2><a href= 'blog?id={{blog.id}}'> {{blog.blog_title}} </a></h2>
         <p>{{blog.blog_entry}}</p>
+          {% for o in owner %}
+          <p><em>by by <a href= 'singleUser?user={{o.id}}'>{{o.email}}</a></em></p>
+          {% endfor %}
         <hr>
       {% endfor %}
     {% else %}
       {% for blog in single_blog_entry %}
       <h2>{{blog.blog_title}}</h2>
       <p>{{blog.blog_entry}}</p>
+        {% for o in owner %}
+        <p><em>by {{o.email}}</em></p>
+        {% endfor %}
       {% endfor %}
 
     {% endif %}

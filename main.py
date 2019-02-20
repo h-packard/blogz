@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://blogz:blogz@localhost:8889/build-a-blog'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://blogz:blogz@127.0.0.1:8889/blogz'
 app.config['SQLALCHEMY_ECHO'] = True
 db = SQLAlchemy(app)
 app.secret_key = 'abc123'
@@ -20,7 +20,6 @@ class Blog(db.Model):
         self.blog_entry = blog_entry
         self.owner = owner
 
-
 class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
@@ -32,15 +31,20 @@ class User(db.Model):
         self.email=email
         self.password=password
 
-def get_blog():
-
-    return Blog.query.filter_by(owner=owner).all()
-
 @app.before_request
 def require_login():
-    allowed_routes = ['login','register']
-    if request.endpoint not in allowed_routes and 'email' not in session:
-        return redirect('/login')
+    not_allowed_routes = ['newpost']
+    if request.endpoint in not_allowed_routes and 'email' not in session:
+         return redirect('/login')
+
+
+@app.route('/singleUser')
+def single_user():
+    single_user_blog = int(request.args.get('user'))
+    single_user_entries = Blog.query.filter_by(owner_id=single_user_blog).all()
+    owners = User.query.filter_by(id=single_user_blog).all()
+    return render_template('singleUser.html',title="Single User's Blog", single_user_blog=single_user_blog, single_user_entries=single_user_entries,owners=owners)
+
 
 
 @app.route('/login', methods=['POST','GET'])
@@ -54,9 +58,10 @@ def login():
             session['email'] = email
             flash('Logged in!')
             return redirect('/newpost')
+        elif not user:
+            flash('User does not exist', 'error')
         else:
-            flash('User password incorrect or user does not exist', 'error')
-
+            flash('User password incorrect','error')
 
     return render_template('login.html')
 
@@ -88,7 +93,6 @@ def register():
             new_user = User(email,password)
             db.session.add(new_user)
             db.session.commit()
-
             session['email'] = email
             return redirect('/newpost')
 
@@ -101,7 +105,7 @@ def register():
 @app.route('/logout')
 def logout():
     del session['email']
-    return redirect('/login')
+    return redirect('/')
 
 @app.route('/newpost', methods=['POST','GET'])
 def new_post():
@@ -128,13 +132,20 @@ def new_post():
     return render_template('newpost.html',title='New Post')
 
 @app.route('/blog', methods=['POST','GET'])
-def index():
+def list_blogs():
     owner = User.query.filter_by(email=session['email']).first()
-    blogs = Blog.query.filter_by(owner=owner).all()
-    single_blog = request.args.get('id')
+    blogs = Blog.query.all()
+    # all_blogs = Blog.query.all()
+    single_blog = int(request.args.get('id'))
     single_blog_entry = Blog.query.filter_by(id=single_blog).all()
 
-    return render_template('blog.html',title='Build A Blog',single_blog_entry=single_blog_entry, single_blog=single_blog, blogs=blogs, owner=owner)
+    return render_template('blog.html',title='Build A Blog',single_blog_entry=single_blog_entry, single_blog=single_blog, blogs=blogs, owner=owner, all_blogs=all_blogs)
+
+@app.route('/', methods=['POST','GET'])
+def index():
+    usernames = User.query.all()
+
+    return render_template('index.html',title='Home',usernames=usernames)
 
 if __name__ == '__main__':
     app.run()
