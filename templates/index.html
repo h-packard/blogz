@@ -1,16 +1,14 @@
 {% extends 'base.html' %}
 {% block content %}
 
-{%for username in usernames %}
-  <div><a href="/singleUser?user={{username.id}}" > {{username.email}} </a></div>
-{% endfor %}
+  {%for username in usernames %}
+    <div><a href="/singleUser?user={{username.id}}" > {{username.email}} </a></div>
+  {% endfor %}
 
-{% for blog in blogs %}
-  <h2><a href= 'blog?id={{blog.id}}'> {{blog.blog_title}} </a></h2>
-  <p>{{blog.blog_entry}}</p>
-    {% for o in owner %}
-    <p><em>by by <a href= 'singleUser?user={{o.id}}'>{{o.email}}</a></em></p>
-    {% endfor %}
-  <hr>
+  {% for blog in blogs %}
+    <h2><a href= 'blog?id={{blog.id}}'> {{blog.blog_title}} </a></h2>
+    <p>{{blog.blog_entry}}</p>
+  {% endfor %}
+    <hr>
 
 {% endblock %}

@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://blogz:blogz@127.0.0.1:8889/blogz'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://blogz:blogz@localhost:8889/blogz'
 app.config['SQLALCHEMY_ECHO'] = True
 db = SQLAlchemy(app)
 app.secret_key = 'abc123'
@@ -31,19 +31,15 @@ class User(db.Model):
         self.email=email
         self.password=password
 
-@app.before_request
-def require_login():
-    not_allowed_routes = ['newpost']
-    if request.endpoint in not_allowed_routes and 'email' not in session:
-         return redirect('/login')
-
-
 @app.route('/singleUser')
 def single_user():
-    single_user_blog = int(request.args.get('user'))
+    single_user_blog = request.args.get('user')
     single_user_entries = Blog.query.filter_by(owner_id=single_user_blog).all()
     owners = User.query.filter_by(id=single_user_blog).all()
-    return render_template('singleUser.html',title="Single User's Blog", single_user_blog=single_user_blog, single_user_entries=single_user_entries,owners=owners)
+    single_blog = request.args.get('id')
+    single_blog_entry = Blog.query.filter_by(id=single_blog).all()
+
+    return render_template('singleUser.html',title="Single User's Blog", single_user_blog=single_user_blog,single_blog=single_blog, single_user_entries=single_user_entries,owners=owners,single_blog_entry=single_blog_entry)
 
 
 
@@ -105,41 +101,49 @@ def register():
 @app.route('/logout')
 def logout():
     del session['email']
-    return redirect('/')
+    return redirect('/blog')
 
 @app.route('/newpost', methods=['POST','GET'])
 def new_post():
-    owner = User.query.filter_by(email=session['email']).first()
+    if 'email' not in session:
+        return redirect('/login')
+    else:
+        owner = User.query.filter_by(email=session['email']).first()
 
-    if request.method =='POST':
-        blog_title = request.form['blog-title']
-        blog_entry = request.form['blog-entry']
-        if len(blog_title) == 0:
-            flash('You must give this entry a title', 'error')
-            return render_template('newpost.html',title='New Post')
+        if request.method =='POST':
+            blog_title = request.form['blog-title']
+            blog_entry = request.form['blog-entry']
+            if len(blog_title) == 0:
+                flash('You must give this entry a title', 'error')
+                return render_template('newpost.html',title='New Post')
 
-        elif len(blog_entry) == 0:
-            flash('You must write an entry', 'error')
-            return render_template('newpost.html',title='New Post')
-        else:
-            new_blog = Blog(blog_title, blog_entry, owner)
-            db.session.add(new_blog)
-            db.session.commit()
-            id = str(new_blog.id)
-            new_url = '/blog?id='+id
-            return redirect(new_url)
+            elif len(blog_entry) == 0:
+                flash('You must write an entry', 'error')
+                return render_template('newpost.html',title='New Post')
+            else:
+                new_blog = Blog(blog_title, blog_entry, owner)
+                db.session.add(new_blog)
+                db.session.commit()
+                id = str(new_blog.id)
+                new_url = '/blog?id='+id
+                return redirect(new_url)
 
-    return render_template('newpost.html',title='New Post')
+        return render_template('newpost.html',title='New Post')
 
 @app.route('/blog', methods=['POST','GET'])
 def list_blogs():
-    owner = User.query.filter_by(email=session['email']).first()
     blogs = Blog.query.all()
-    # all_blogs = Blog.query.all()
-    single_blog = int(request.args.get('id'))
+    single_user_id = request.args.get('user')
+    single_blog = request.args.get('id')
     single_blog_entry = Blog.query.filter_by(id=single_blog).all()
+    owners = User.query.all()
 
-    return render_template('blog.html',title='Build A Blog',single_blog_entry=single_blog_entry, single_blog=single_blog, blogs=blogs, owner=owner, all_blogs=all_blogs)
+    if 'email' in session:
+        owner = User.query.filter_by(email=session['email']).first()
+        return render_template('blog.html',title='Build A Blog',single_blog_entry=single_blog_entry, single_blog=single_blog, blogs=blogs, owners=owners,single_user_id=single_user_id)
+    return render_template('blog.html',title='Build A Blog',single_blog_entry=single_blog_entry, single_blog=single_blog, blogs=blogs, owners=owners, single_user_id=single_user_id)
+
+
 
 @app.route('/', methods=['POST','GET'])
 def index():
